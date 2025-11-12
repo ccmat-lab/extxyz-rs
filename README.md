@@ -4,7 +4,7 @@ rust interface for libAtoms/extxyz
 
 ## dev
 
-Clone with `libAtoms/extxyz` source code as submodule
+Clone `libAtoms/extxyz` source code (and its submodule `libcleri` for language parsing) as submodules
 
 ```console
 git clone --recurse-submodules https://github.com/ccmat-lab/extxyz-rs.git

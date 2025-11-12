@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(unnecessary_transmutes)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+include!("bindings.rs");
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+fn foo() {
+    unsafe {
+        let kv_grammar = compile_extxyz_kv_grammar();
     }
 }

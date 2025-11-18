@@ -7,7 +7,8 @@
 use std::{
     collections::HashMap,
     ffi::{CStr, CString},
-    io, slice,
+    io::{self, BufWriter, Write},
+    slice,
 };
 
 use libc::fmemopen;
@@ -206,6 +207,9 @@ impl DictHandler {
 
 /// Safe wrapper around the unsafe C API function `extxyz_read_ll`.
 ///
+/// TODO: extxyz_read_ll takes fp, which has an internal c buffer, the wrapper accept &str as input
+/// is too specific and lost performance when reading large files.
+///
 /// Returns `(natoms, info, arrays, comments)` as a fallible `Result`.
 ///
 /// # Errors
@@ -217,6 +221,10 @@ impl DictHandler {
 /// # Panics
 ///
 /// - If initialization of a `CString` fails.
+///
+/// XXX: the general wrapper takes *mut FILE as argument, and can then have
+/// - `extxyz_read_from_file` and
+/// - `extxyz_read_from_str`.
 pub fn extxyz_read(
     input: &str,
     comment_override: Option<&str>,
@@ -243,15 +251,18 @@ pub fn extxyz_read(
     let mut error_message = vec![0u8; 1024];
     let error_ptr = error_message.as_mut_ptr().cast::<i8>();
 
-    let ret = unsafe {
-        let mut bytes = input.as_bytes().to_vec();
-        let fp = fmemopen(
+    let mut bytes = input.as_bytes().to_vec();
+    let fp = unsafe {
+        fmemopen(
             bytes.as_mut_ptr().cast::<libc::c_void>(),
             bytes.len(),
             CString::new("r")
                 .expect("cannot have internal 0 byte")
                 .as_ptr(),
-        );
+        )
+    };
+
+    let ret = unsafe {
         if fp.is_null() {
             return Err(io::Error::other("Failed to open file"));
         }
@@ -266,6 +277,8 @@ pub fn extxyz_read(
             error_ptr,
         )
     };
+
+    unsafe { libc::fclose(fp) };
 
     let err_msg = unsafe {
         let err_cstr = CStr::from_ptr(error_ptr.cast_const());
@@ -288,6 +301,23 @@ pub fn extxyz_read(
     }
 
     Ok((nat, info_val, arrays_val))
+}
+
+// instead of calling c api, it is easier to reimplement it, because I don't need to do parsing.
+// since it is rust, performance wise also compatible with c implementation and safe.
+pub fn extxyz_write<W: Write>(
+    mut w: BufWriter<W>,
+    natoms: i32,
+    info: &DictHandler,
+    arrs: &DictHandler,
+) -> std::io::Result<()> {
+    writeln!(w, "{natoms}")?;
+
+    // info
+    // TODO:
+    // arrays
+    
+    Ok(())
 }
 
 #[cfg(test)]

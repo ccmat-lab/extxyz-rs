@@ -119,11 +119,6 @@ pub enum Value {
     Unsupported,
 }
 
-// In the c impl the output format to:
-// #define INTEGER_FMT "%8d"
-// #define FLOAT_FMT "%16.8f"
-// #define STRING_FMT "%s"
-// #define BOOL_FMT "%.1s"
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn fmt_array<T: std::fmt::Display>(arr: &[T]) -> String {
